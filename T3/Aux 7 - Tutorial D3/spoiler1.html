@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Tutorial D3</title>
+        <script src="d3.min.js" charset="utf-8"></script>
+    </head>
+    <body>
+        <div id="chart" class="clase1" style="width:550px;height:350px;border:black 1px solid;"></div>
+        <script>
+            var svg;
+            var datos;
+            function importData(){
+                d3.csv("test_data.csv").then(function(data) {
+                        // Casting de String -> Number
+                        data.forEach(function(d){
+                            d.v1 = +d.v1;
+                            d.v2 = +d.v2;
+                            d.v3 = +d.v3;
+                        });
+                        datos = data;
+                    });
+            }
+            function firstSteps(aSvg){
+                var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+                var x = d3.scaleLinear()
+                    .domain([0, d3.max(datos, function(d) {
+                        return +d.v1
+                    })])
+                   .range([0, width]);
+
+                var xAxis = d3.axisBottom().scale(x);
+
+                aSvg.append("g")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(xAxis);
+
+                var y = d3.scaleLinear()
+                   .domain([0, d3.max(datos, function(d) {
+                       return +d.v2
+                   })])
+                   .range([height, 0]);
+
+                var yAxis = d3.axisLeft().scale(y);
+
+                aSvg.append("g")
+                    .call(yAxis);
+
+                aSvg.selectAll("circle")
+                    .data(datos)
+                    .enter() // Enter ;)
+                    .append("circle")
+                    .attr("r", function(d) { return d.v3 })
+                    .style("stroke", "black")
+                    .style("stroke-width", 5)
+                    .style("fill", function(d) { return color(d.v4) })
+                    .attr("cx", function(d) { return x(d.v1) })
+                    .attr("cy", function(d) { return y(d.v2) });
+
+                var leyenda = aSvg.selectAll(".leyenda")
+                    .data(color.domain())
+                    .enter()
+                    .append("g")
+                    .attr("class", "leyenda")
+                    .attr("transform", function(d, i) {
+                        return "translate(0," + i * 20 + ")";
+                    });
+
+                leyenda.append("rect")
+                    .attr("x", width - 18)
+                    .attr("width", 18)
+                    .attr("height", 18)
+                    .style("fill", color);
+
+                leyenda.append("text")
+                    .attr("x", width - 24)
+                    .attr("y", 9)
+                    .attr("dy", ".35em")
+                    .style("text-anchor", "end")
+                    .text(function(d) {
+                        return d;
+                    });
+            }
+            var margin = {
+                top: 20,
+                right: 10,
+                bottom: 20,
+                left: 50
+            };
+            var width = 500 - margin.left - margin.right,
+                height = 300 - margin.top - margin.bottom;
+            svg = d3.select("#chart").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        </script>
+    </body>
+</html>
