@@ -22,47 +22,19 @@ const yAxis = d3.svg.axis()
 const color = d3.scale.ordinal()
     .range(["#ca0020","#f4a582","#d5d5d5","#92c5de","#0571b0"]);
 
-    d3.csv("IVE-SINAE-BASICA.csv", function(error, data) {
-        createVis(data)
-    });
+d3.csv("IVE-SINAE-BASICA.csv", function(error, data) {
+    createVis(data)
+});
 
-function countDependenciasGral(nested, dependenciaNames){
-    const dict = {}
-    dependenciaNames.forEach((el, index) => dict[el] = 0);
-    for(index in nested){
-        const dict_reg = {}
-        dependenciaNames.forEach((el, index) => dict_reg[el] = 0);
-        getInfoByReg(nested, index, dict_reg)
-        for(key in dependenciaNames){
-            if (dict_reg[dependenciaNames[key]] > dict[dependenciaNames[key]]){
-                dict[dependenciaNames[key]] = dict_reg[dependenciaNames[key]];
-            }
-        }
-    }
-    const arr = [];
-    for (const key in dict) {
-        arr.push(dict[key])
-    }
-
-    return arr;
-}
-
-function getInfoByReg(nested, index, dict_reg){
-    for(k in nested[index].values){
-        let dependencia = nested[index].values[k];
-        dict_reg[dependencia.key] += dependencia.values.length;
-    }
-    return dict_reg;
-}
 
 // function that wraps around the d3 pattern (bind, add, update, remove)
 // Fuente: https://stackoverflow.com/questions/24193593/d3-how-to-change-dataset-based-on-drop-down-box-selection
 function createVis(data) {
     const canvas = d3.select('#GA2').append("svg")
-        .attr("id", "svg-ga2")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .append("g")
+        .attr("id", "svg-ga2")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     const nested = d3.nest()
@@ -124,6 +96,7 @@ function createVis(data) {
         .text("Distribución de alumnos vulnerables por región con respecto a dependencia.");
 
     canvas.select('.y').transition().duration(500).delay(1300).style('opacity', '1');
+
     updateData(nested)
 
     //Legend
@@ -150,13 +123,16 @@ function createVis(data) {
     legend.transition().duration(500).delay(function(d,i){ return 1300 + 100 * i; }).style("opacity","1");
 }
 function updateData(nested){
+    canvas = d3.select('#svg-ga2')
     console.log("updating data")
-    const canvas = d3.select('#svg-ga2')
+
     const slice = canvas.selectAll(".slice")
-        .data(nested)
-        .enter().append("g")
+        .data(nested);
+    
+    slice.enter().append("g")
         .attr("class", "g")
         .attr("transform",function(d) { return "translate(" + x0(d.key) + ",0)"; });
+
 
     slice.selectAll("rect")
         .data(function(d) { return d.values; })
@@ -173,11 +149,6 @@ function updateData(nested){
             d3.select(this).style("fill", color(d.key));
         });
 
-    // update both new and existing elements
-    slice.transition()
-        .duration(0)
-
-    // remove old elements
     slice.selectAll("rect")
         .transition()
         .delay(function (d) {return Math.random()*1000;})
@@ -185,29 +156,59 @@ function updateData(nested){
         .attr("y", function(d) { return y(d.values.length); })
         .attr("height", function(d) { return height - y(d.values.length); });
 
+
 }
 
 document.addEventListener("DOMContentLoaded", function(event) {
     d3.select('#opts').on('change', function() {
         var newData = document.getElementById('opts').value;
         if (newData == "MEDIA"){
-            console.log("Changing to media 1");
             d3.csv("IVE-SINAE-MEDIA.csv", function(error, data) {
                 const nested = d3.nest()
                     .key(function (d) {return d.COD_REGION;})
                     .key(function (d) {return d.DEPENDENCIA;})
                     .entries(data);
                 updateData(nested)
+
             });
         } else {
-            console.log("Changing to basica 1");
             d3.csv("IVE-SINAE-BASICA.csv", function (error, data) {
                 const nested = d3.nest()
                     .key(function (d) {return d.COD_REGION;})
                     .key(function (d) {return d.DEPENDENCIA;})
                     .entries(data);
-                updateData(data)
+                updateData(nested)
             })
         }
     });
 });
+
+
+function countDependenciasGral(nested, dependenciaNames){
+    const dict = {}
+    dependenciaNames.forEach((el, index) => dict[el] = 0);
+    for(index in nested){
+        const dict_reg = {}
+        dependenciaNames.forEach((el, index) => dict_reg[el] = 0);
+        getInfoByReg(nested, index, dict_reg)
+        for(key in dependenciaNames){
+            if (dict_reg[dependenciaNames[key]] > dict[dependenciaNames[key]]){
+                dict[dependenciaNames[key]] = dict_reg[dependenciaNames[key]];
+            }
+        }
+    }
+    const arr = [];
+    for (const key in dict) {
+        arr.push(dict[key])
+    }
+
+    return arr;
+}
+
+function getInfoByReg(nested, index, dict_reg){
+    for(k in nested[index].values){
+        let dependencia = nested[index].values[k];
+        dict_reg[dependencia.key] += dependencia.values.length;
+    }
+    return dict_reg;
+}
